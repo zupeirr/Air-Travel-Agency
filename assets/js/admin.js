@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    assets/js/admin.js  —  Admin Dashboard JavaScript
    ==========================================================================
 
@@ -23,19 +23,57 @@
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    /* ── 1. SIDEBAR TOGGLE (MOBILE) ──────────────────────────────────────
-       On small screens, the sidebar (#adminSidebar) is hidden off-screen.
-       The hamburger button (#sidebarToggle) in the top bar toggles it open.
-       CSS handles the sliding animation via the "open" class. */
+    /* ── 1. SIDEBAR TOGGLE ───────────────────────────────────────────────
+       Two behaviours depending on screen size:
+
+       DESKTOP (>900px):  Toggles between expanded (250px) and collapsed
+       (68px icon-only rail) by adding/removing "sidebar-collapsed" on
+       <body>. State is persisted in localStorage so it survives page loads.
+
+       MOBILE (<=900px):  Classic slide-in/out via "open" on the sidebar. */
 
     const sidebarToggle = document.getElementById('sidebarToggle'); // The ☰ button in the top bar
-    const sidebar       = document.getElementById('adminSidebar');   // The left-side navigation panel
+    const sidebar = document.getElementById('adminSidebar');   // The left-side navigation panel
+    const COLLAPSED_KEY = 'sidebarCollapsed';                        // localStorage key
+
+    function isDesktop() {
+        return window.innerWidth > 900;
+    }
+
+    // Restore desktop collapsed state from localStorage on page load
+    if (localStorage.getItem(COLLAPSED_KEY) === 'true') {
+        document.body.classList.add('sidebar-collapsed');
+    }
 
     if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', function () {
-            sidebar.classList.toggle('open'); // Add "open" to slide sidebar in, remove to slide it out
+            if (isDesktop()) {
+                // Desktop: toggle collapsed rail
+                const nowCollapsed = document.body.classList.toggle('sidebar-collapsed');
+                localStorage.setItem(COLLAPSED_KEY, nowCollapsed ? 'true' : 'false');
+                // Also close any open dropdown groups when collapsing
+                if (nowCollapsed) {
+                    document.querySelectorAll('.nav-group.open').forEach(function (g) {
+                        g.classList.remove('open');
+                    });
+                }
+            } else {
+                // Mobile: slide sidebar in/out
+                sidebar.classList.toggle('open');
+            }
         });
     }
+
+    // If the window is resized across the 900px breakpoint, clean up state
+    window.addEventListener('resize', function () {
+        if (!isDesktop()) {
+            // On mobile, remove the desktop collapsed class from body
+            // (CSS overrides handle hiding it anyway, but keep body clean)
+        } else {
+            // On desktop, close the mobile open state
+            sidebar.classList.remove('open');
+        }
+    });
 
 
     /* ── 2. SIDEBAR DROPDOWN GROUPS ──────────────────────────────────────
@@ -90,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function () {
          <input type="file" id="propertyImage">
          <img id="imagePreview" style="display:none;"> */
 
-    const imageInput   = document.getElementById('propertyImage'); // The file input
+    const imageInput = document.getElementById('propertyImage'); // The file input
     const imagePreview = document.getElementById('imagePreview');  // The preview <img> element
 
     if (imageInput && imagePreview) {
@@ -121,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.alert').forEach(function (alert) {
         setTimeout(function () {
             alert.style.transition = 'opacity 0.4s ease'; // Smooth 0.4s fade-out
-            alert.style.opacity    = '0';                  // Start fading
+            alert.style.opacity = '0';                  // Start fading
             setTimeout(function () {
                 alert.remove(); // Remove from DOM after fade completes
             }, 400); // 400ms = matches the CSS transition duration above
