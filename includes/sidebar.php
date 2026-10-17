@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // Helper: return 'active' class if current page matches
 function isActive($page) {
     global $currentPage;
@@ -28,7 +28,7 @@ function isGroupActive($pages) {
 
         <!-- BOOKINGS -->
 
-        <div<?php echo isGroupActive(['bookings-all.php','bookings-flights.php','bookings-hotels.php','bookings-cars.php','bookings-tours.php']); ?>>
+        <div<?php echo isGroupActive(['bookings-all.php','booking-create.php','booking-edit.php','booking-detail.php','bookings-flights.php','bookings-hotels.php','bookings-cars.php','bookings-tours.php']); ?>>
             <button class="nav-group-toggle" data-tip="Bookings">
                 <span class="ic"><i data-lucide="calendar"></i></span>
                 <span>Bookings</span>
@@ -60,7 +60,7 @@ function isGroupActive($pages) {
 
         <!-- VISA SERVICES -->
 
-        <div<?php echo isGroupActive(['visa-all.php','visa-travel.php','visa-education.php','visa-business.php','visa-family.php','visa-requirements.php','visa-checklist.php','visa-appointments.php','visa-tracking.php','visa-passports.php']); ?>>
+        <div<?php echo isGroupActive(['visa-all.php','visa-travel.php','visa-education.php','education-create.php','education-detail.php','visa-business.php','visa-family.php','visa-requirements.php','visa-checklist.php','visa-appointments.php','visa-tracking.php','visa-passports.php']); ?>>
             <button class="nav-group-toggle" data-tip="Visa Services">
                 <span class="ic"><i data-lucide="file-text"></i></span>
                 <span>Visa Services</span>

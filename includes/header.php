@@ -67,8 +67,13 @@ include 'includes/sidebar.php';
             </button>
             <h1><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) : 'Dashboard'; ?></h1>
         </div>
-        <div class="who">
-            <span>Welcome, <strong>Admin</strong></span>
+        <div class="who" style="display:flex;align-items:center;gap:10px;">
+            <span>Welcome, <strong><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Admin'); ?></strong></span>
+            <?php if (!empty($_SESSION['user_role_name'])): ?>
+            <span style="background:rgba(234,179,8,0.15);color:var(--gold-500);font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;text-transform:uppercase;letter-spacing:0.04em;">
+                <?php echo htmlspecialchars($_SESSION['user_role_name']); ?>
+            </span>
+            <?php endif; ?>
         </div>
     </div>
 
