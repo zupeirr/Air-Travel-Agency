@@ -25,11 +25,15 @@ $pageTitle = 'Edu App: '.$ea['application_code'];
 $documents = db_select("
     SELECT cd.*
     FROM customer_documents cd
-    -- Normally you'd link this via a mapping table like education_application_documents, 
-    -- but for simplicity if we just rely on customer_documents tied to customer, we can list them all,
-    -- or assume any uploaded for this app. We'll list the customer's education related docs.
     WHERE cd.customer_id = ? AND cd.document_type IN ('passport', 'national_id', 'photo', 'bank_statement', 'admission_letter', 'other')
     ORDER BY cd.uploaded_at DESC", [$ea['cust_id']]);
+
+$linkedVisas = db_select("
+    SELECT va.*, vt.name AS visa_type_name
+    FROM visa_applications va
+    JOIN visa_types vt ON vt.id = va.visa_type_id
+    WHERE va.customer_id = ?
+    ORDER BY va.created_at DESC", [$ea['cust_id']]);
 
 // Status handling
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -216,6 +220,40 @@ include 'includes/header.php';
                 </div>
                 <span class="badge <?= ['pending'=>'badge-pending','submitted'=>'badge-submitted','verified'=>'badge-approved','rejected'=>'badge-rejected'][$doc['status']]??'badge-draft' ?>">
                     <?= ucfirst($doc['status']) ?>
+                </span>
+            </div>
+            <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Student Visa Applications -->
+    <div class="panel" style="margin-bottom:0;">
+        <div class="panel-head">
+            <h2>Student Visa Applications</h2>
+            <a href="visa-create.php?customer_id=<?= $ea['cust_id'] ?>&purpose=Education+at+<?= urlencode($ea['institution_name']) ?>" class="btn btn-ghost btn-sm">
+                <i data-lucide="plus"></i> New Visa App
+            </a>
+        </div>
+        <div class="panel-body" style="padding-top:8px;">
+            <?php if (empty($linkedVisas)): ?>
+            <div class="empty-state" style="padding:16px;">
+                No visa applications linked yet.<br>
+                <a href="visa-create.php?customer_id=<?= $ea['cust_id'] ?>&purpose=Education+at+<?= urlencode($ea['institution_name']) ?>" style="color:var(--navy-800);font-weight:600;font-size:0.8rem;margin-top:6px;display:inline-block;">
+                    Create student visa application &rarr;
+                </a>
+            </div>
+            <?php else: ?>
+            <?php foreach ($linkedVisas as $lv): ?>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+                <div>
+                    <a href="visa-detail.php?id=<?= $lv['id'] ?>" style="font-weight:700;font-size:0.85rem;color:var(--navy-900);text-decoration:none;">
+                        <code><?= htmlspecialchars($lv['application_code']) ?></code>
+                    </a>
+                    <div style="font-size:0.75rem;color:var(--ink-soft);"><?= htmlspecialchars($lv['destination_country']) ?> · <?= htmlspecialchars($lv['visa_type_name']) ?></div>
+                </div>
+                <span class="badge <?= ['approved'=>'badge-approved','rejected'=>'badge-rejected','cancelled'=>'badge-rejected'][$lv['status']]??'badge-review' ?>" style="font-size:0.72rem;">
+                    <?= ucwords(str_replace('_',' ',$lv['status'])) ?>
                 </span>
             </div>
             <?php endforeach; ?>

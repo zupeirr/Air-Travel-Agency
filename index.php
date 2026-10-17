@@ -1,12 +1,25 @@
-<?php
+﻿<?php
 $pageTitle = 'Dashboard';
 $agencyName = 'Air Travel Online Agency';
+require_once __DIR__ . '/config/db.php';
+
+// Live data for dashboard
+$dashAppts = db_select("
+    SELECT a.appointment_ref, a.appointment_type, a.appointment_date, a.appointment_time, a.status,
+           c.first_name, c.last_name, c.id AS customer_id
+    FROM appointments a
+    JOIN customers c ON c.id = a.customer_id
+    WHERE a.appointment_date >= CURDATE()
+      AND a.status IN ('scheduled','confirmed','rescheduled')
+    ORDER BY a.appointment_date ASC, a.appointment_time ASC
+    LIMIT 5");
+
 include 'includes/header.php';
 ?>
 
-<!-- ══════════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      WELCOME BANNER
-══════════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="dash-welcome">
     <div class="dash-welcome-text">
         <h2>Welcome back, Admin 👋</h2>
@@ -22,9 +35,9 @@ include 'includes/header.php';
     </div>
 </div>
 
-<!-- ══════════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      KPI CARDS
-══════════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="dash-stats">
     <div class="dash-card" id="kpi-customers">
         <div class="ic-wrap navy"><i data-lucide="users"></i></div>
@@ -72,14 +85,14 @@ include 'includes/header.php';
     </div>
 </div>
 
-<!-- ══════════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      VISA APPLICATIONS FUNNEL
-══════════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="panel" id="panel-visa-funnel">
     <div class="panel-head">
         <h2><i data-lucide="file-text" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;"></i> Visa Applications</h2>
         <div style="display:flex;align-items:center;gap:10px;">
-            <span class="panel-head-stat">86 active · 234 total</span>
+            <span class="panel-head-stat">86 active Â· 234 total</span>
             <a href="visa-all.php" class="btn btn-ghost btn-sm">View All</a>
         </div>
     </div>
@@ -114,14 +127,14 @@ include 'includes/header.php';
     </div>
 </div>
 
-<!-- ══════════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      EDUCATION APPLICATIONS FUNNEL
-══════════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="panel" id="panel-edu-funnel">
     <div class="panel-head">
         <h2><i data-lucide="graduation-cap" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;"></i> Education Applications</h2>
         <div style="display:flex;align-items:center;gap:10px;">
-            <span class="panel-head-stat">42 active · 118 total</span>
+            <span class="panel-head-stat">42 active Â· 118 total</span>
             <a href="visa-education.php" class="btn btn-ghost btn-sm">View All</a>
         </div>
     </div>
@@ -156,9 +169,9 @@ include 'includes/header.php';
     </div>
 </div>
 
-<!-- ══════════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      RECENT BOOKINGS + UPCOMING APPOINTMENTS
-══════════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="dash-grid-3">
 
     <!-- Recent Bookings -->
@@ -257,73 +270,59 @@ include 'includes/header.php';
             <a href="customers-appointments.php" class="btn btn-ghost btn-sm">View All</a>
         </div>
         <div class="panel-body" style="padding:0;">
+            <?php
+            $aptColors   = ['#2563eb','#7c3aed','#047857','#d97706','#b0413e','#0e7490','#dc2626'];
+            $aptTypeLabel= ['visa_consult'=>'Visa','education_consult'=>'Edu','travel_planning'=>'Travel','document_review'=>'Docs','follow_up'=>'Follow-up','other'=>'Other'];
+            $aptTypePill = ['visa_consult'=>'visa','education_consult'=>'edu','travel_planning'=>'travel','document_review'=>'consult','follow_up'=>'consult','other'=>'consult'];
+            ?>
+            <?php if (empty($dashAppts)): ?>
+            <div class="empty-state" style="padding:32px 20px;">
+                <div style="font-size:2rem;margin-bottom:8px;">calendar</div>
+                <p style="color:var(--ink-soft);margin:0;">No upcoming appointments scheduled.</p>
+                <a href="customers-appointments.php" class="btn btn-primary btn-sm" style="margin-top:12px;">Schedule One</a>
+            </div>
+            <?php else: ?>
             <table class="data-table">
                 <thead>
                     <tr>
                         <th>Client</th>
                         <th>Type</th>
-                        <th>Date & Time</th>
+                        <th>Date and Time</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>
-                            <div class="avatar-wrap">
-                                <div class="customer-avatar" style="background:#2563eb;">AM</div>
-                                <div class="avatar-name">Ahmed Malik</div>
+                <?php foreach ($dashAppts as $i => $a):
+                    $initials  = strtoupper(substr($a['first_name'],0,1).substr($a['last_name'],0,1));
+                    $color     = $aptColors[$i % count($aptColors)];
+                    $typeKey   = $a['appointment_type'];
+                    $typeLabel = $aptTypeLabel[$typeKey] ?? ucfirst($typeKey);
+                    $typePill  = $aptTypePill[$typeKey] ?? 'consult';
+                    $isToday   = ($a['appointment_date'] === date('Y-m-d'));
+                    $statusClass = ($a['status'] === 'confirmed') ? 'confirmed' : 'pending';
+                ?>
+                <tr>
+                    <td>
+                        <div class="avatar-wrap">
+                            <div class="customer-avatar" style="background:<?= $color ?>;"><?= htmlspecialchars($initials) ?></div>
+                            <div class="avatar-name">
+                                <a href="customer-profile.php?id=<?= $a['customer_id'] ?>" style="color:inherit;text-decoration:none;">
+                                    <?= htmlspecialchars($a['first_name'].' '.$a['last_name']) ?>
+                                </a>
                             </div>
-                        </td>
-                        <td><span class="appt-type-pill visa">Visa</span></td>
-                        <td><strong>Oct 5</strong><br><span style="font-size:0.78rem;color:var(--ink-soft);">9:00 AM</span></td>
-                        <td><span class="status-pill confirmed">Confirmed</span></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="avatar-wrap">
-                                <div class="customer-avatar" style="background:#7c3aed;">FO</div>
-                                <div class="avatar-name">Fatima Omar</div>
-                            </div>
-                        </td>
-                        <td><span class="appt-type-pill edu">Education</span></td>
-                        <td><strong>Oct 5</strong><br><span style="font-size:0.78rem;color:var(--ink-soft);">11:30 AM</span></td>
-                        <td><span class="status-pill pending">Pending</span></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="avatar-wrap">
-                                <div class="customer-avatar" style="background:#047857;">CN</div>
-                                <div class="avatar-name">Carlos Neto</div>
-                            </div>
-                        </td>
-                        <td><span class="appt-type-pill travel">Travel</span></td>
-                        <td><strong>Oct 6</strong><br><span style="font-size:0.78rem;color:var(--ink-soft);">2:00 PM</span></td>
-                        <td><span class="status-pill confirmed">Confirmed</span></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="avatar-wrap">
-                                <div class="customer-avatar" style="background:#d97706;">LW</div>
-                                <div class="avatar-name">Lin Wei</div>
-                            </div>
-                        </td>
-                        <td><span class="appt-type-pill consult">Consult</span></td>
-                        <td><strong>Oct 7</strong><br><span style="font-size:0.78rem;color:var(--ink-soft);">10:00 AM</span></td>
-                        <td><span class="status-pill pending">Pending</span></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="avatar-wrap">
-                                <div class="customer-avatar" style="background:#b0413e;">NA</div>
-                                <div class="avatar-name">Nour Al-Hassan</div>
-                            </div>
-                        </td>
-                        <td><span class="appt-type-pill visa">Visa</span></td>
-                        <td><strong>Oct 8</strong><br><span style="font-size:0.78rem;color:var(--ink-soft);">3:30 PM</span></td>
-                        <td><span class="status-pill confirmed">Confirmed</span></td>
-                    </tr>
+                        </div>
+                    </td>
+                    <td><span class="appt-type-pill <?= $typePill ?>"><?= $typeLabel ?></span></td>
+                    <td>
+                        <strong><?= $isToday ? 'Today' : date('M j', strtotime($a['appointment_date'])) ?></strong><br>
+                        <span style="font-size:0.78rem;color:var(--ink-soft);"><?= date('g:i A', strtotime($a['appointment_time'])) ?></span>
+                    </td>
+                    <td><span class="status-pill <?= $statusClass ?>"><?= ucfirst($a['status']) ?></span></td>
+                </tr>
+                <?php endforeach; ?>
                 </tbody>
             </table>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -332,9 +331,9 @@ include 'includes/header.php';
 <!-- Spacer -->
 <div style="height:24px;"></div>
 
-<!-- ══════════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      REVENUE OVERVIEW + RECENT ACTIVITY
-══════════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="dash-grid-2">
 
     <!-- Revenue Chart -->
@@ -443,7 +442,7 @@ include 'includes/header.php';
 </div>
 
 <script>
-// ── Revenue Chart (vanilla JS canvas-free bar chart) ──────────────────────────
+// â”€â”€ Revenue Chart (vanilla JS canvas-free bar chart) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 document.addEventListener('DOMContentLoaded', function () {
 
     const data = {

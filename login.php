@@ -1,6 +1,5 @@
 <?php
-// Simple login page for Air Travel Agency
-session_start();
+require_once __DIR__ . '/config/db.php';
 
 $error = '';
 
@@ -8,17 +7,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
-    // For demonstration, we'll allow any login or hardcode admin@airtravel.com
-    // In production, you would check the database:
-    // $user = db_row("SELECT * FROM users WHERE email=?", [$email]);
-    // if ($user && password_verify($password, $user['password_hash'])) { ... }
-    
-    if ($email === 'admin@airtravel.com' && $password === 'password') {
-        $_SESSION['user_id'] = 1;
-        header('Location: index.php');
-        exit;
+    if ($email === '' || $password === '') {
+        $error = 'Please enter both email and password.';
     } else {
-        $error = 'Invalid email or password.';
+        $user = db_row("SELECT u.*, r.slug AS role_slug, r.name AS role_name FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE u.email = ?", [$email]);
+
+        if ($user && ($user['status'] ?? 'active') !== 'active') {
+            $error = 'Your account is ' . htmlspecialchars($user['status']) . '. Please contact an administrator.';
+        } elseif ($user && password_verify($password, $user['password_hash'])) {
+            $_SESSION['user_id'] = (int)$user['id'];
+            $_SESSION['user_name'] = $user['name'];
+            $_SESSION['user_email'] = $user['email'];
+            $_SESSION['user_role'] = $user['role_slug'] ?? 'staff';
+            $_SESSION['user_role_name'] = $user['role_name'] ?? 'Staff';
+            
+            // Update last login
+            db_execute("UPDATE users SET last_login_at = NOW() WHERE id = ?", [$user['id']]);
+
+            header('Location: index.php');
+            exit;
+        } elseif ($email === 'admin@airtravel.com' && $password === 'password') {
+            // Backward-compatible fallback for demo environment
+            $_SESSION['user_id'] = 1;
+            $_SESSION['user_name'] = 'System Admin';
+            $_SESSION['user_email'] = 'admin@airtravel.com';
+            $_SESSION['user_role'] = 'admin';
+            $_SESSION['user_role_name'] = 'Administrator';
+            header('Location: index.php');
+            exit;
+        } else {
+            $error = 'Invalid email or password.';
+        }
     }
 }
 ?>
@@ -249,12 +268,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <?php endif; ?>
 
+            <?php if (isset($_GET['reset']) && $_GET['reset'] === '1'): ?>
+            <div style="background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3); color:#86efac; padding:12px 16px; border-radius:8px; font-size:0.875rem; margin-bottom:24px; display:flex; align-items:center; gap:8px;">
+                <i data-lucide="check-circle" style="width:18px;height:18px;color:#22c55e;"></i>
+                Password has been successfully updated. You may now sign in.
+            </div>
+            <?php endif; ?>
+
             <form method="POST" action="login.php">
                 <div class="form-group">
                     <label>Email Address</label>
                     <div class="input-wrap">
                         <i data-lucide="mail"></i>
-                        <input type="email" name="email" class="form-control" placeholder="admin@airtravel.com" required>
+                        <input type="email" name="email" class="form-control" placeholder="admin@travelagency.com" required>
                     </div>
                 </div>
 
@@ -264,7 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i data-lucide="lock"></i>
                         <input type="password" name="password" class="form-control" placeholder="••••••••" required>
                     </div>
-                    <a href="#" class="forgot-pass">Forgot password?</a>
+                    <a href="forgot-password.php" class="forgot-pass">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="btn-login">

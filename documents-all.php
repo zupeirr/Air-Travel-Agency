@@ -1,4 +1,24 @@
 <?php
+require_once __DIR__ . '/config/db.php';
+
+// Handle document verification / rejection
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = trim($_POST['action'] ?? '');
+    $docId  = (int)($_POST['doc_id'] ?? 0);
+    $userId = $_SESSION['user_id'] ?? 1;
+
+    if ($docId > 0 && in_array($action, ['verify', 'reject'])) {
+        $newStatus = ($action === 'verify') ? 'verified' : 'rejected';
+        db_execute(
+            "UPDATE customer_documents SET status = ?, verified_at = NOW(), verified_by = ? WHERE id = ?",
+            [$newStatus, $userId, $docId]
+        );
+        $redirectUrl = 'documents-all.php' . (!empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '');
+        header("Location: $redirectUrl");
+        exit;
+    }
+}
+
 $pageTitle = 'Documents — All';
 include 'includes/header.php';
 $status = trim($_GET['status'] ?? '');
@@ -48,7 +68,16 @@ function dBadge($s) {
                     <div class="tbl-actions">
                         <?php if ($d['file_path']): ?><a href="<?= htmlspecialchars($d['file_path']) ?>" target="_blank" class="tbl-btn" title="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a><?php endif; ?>
                         <?php if ($d['status']==='pending'): ?>
-                        <a href="#" class="tbl-btn success" title="Verify"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></a>
+                        <form method="POST" action="documents-all.php" style="display:inline;" onsubmit="return confirm('Verify this document?');">
+                            <input type="hidden" name="action" value="verify">
+                            <input type="hidden" name="doc_id" value="<?= $d['id'] ?>">
+                            <button type="submit" class="tbl-btn success" title="Verify Document" style="border:none;background:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
+                        </form>
+                        <form method="POST" action="documents-all.php" style="display:inline;" onsubmit="return confirm('Reject this document?');">
+                            <input type="hidden" name="action" value="reject">
+                            <input type="hidden" name="doc_id" value="<?= $d['id'] ?>">
+                            <button type="submit" class="tbl-btn danger" title="Reject Document" style="border:none;background:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                        </form>
                         <?php endif; ?>
                     </div>
                 </td>
