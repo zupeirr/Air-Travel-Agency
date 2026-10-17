@@ -98,8 +98,16 @@ function badgeStatus(string $s): string {
         <a href="customer-add.php" class="btn btn-primary" id="btn-add-customer">
             <i data-lucide="user-plus"></i> Add Customer
         </a>
-        <a href="#" class="btn btn-ghost" id="btn-export-customers">
-            <i data-lucide="download"></i> Export
+        <?php
+        $exportQuery = http_build_query(array_filter([
+            'type'   => 'customers',
+            'q'      => $search,
+            'status' => $status,
+            'nat'    => $nationality
+        ]));
+        ?>
+        <a href="reports-export.php?<?= $exportQuery ?>" class="btn btn-ghost" id="btn-export-customers">
+            <i data-lucide="download"></i> Export CSV
         </a>
     </div>
 </div>

@@ -54,10 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $filename = uniqid('DOC_') . '_' . $customerId . '.' . $ext;
             $destination = $uploadDir . $filename;
             
-            // Note: In a real environment, use move_uploaded_file. 
-            // For this UI mockup/template we'll just simulate it if we can't move.
-            // move_uploaded_file($file['tmp_name'], $destination);
-            $filePath = 'uploads/documents/' . $filename; // Relative path for DB
+            // Check file size limit (10MB)
+            if ($file['size'] > 10 * 1024 * 1024) {
+                $errors[] = 'File is too large. Maximum allowed size is 10 MB.';
+            } else {
+                move_uploaded_file($file['tmp_name'], $destination);
+                $filePath = 'uploads/documents/' . $filename; // Relative path for DB
 
             // Insert into customer_documents
             $docId = db_insert("INSERT INTO customer_documents 
@@ -81,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header("Location: customer-profile.php?id=$customerId&tab=documents");
             }
             exit;
+            }
         }
     }
 }
